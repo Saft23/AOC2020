@@ -8,13 +8,13 @@ import (
 	"strconv"
 )
 
-var input = "input"
+var input = "input2"
 
 type Program struct {
 	Pointer int
 	Accumilator int
 	Instructions []string
-	PrevInstructions []string
+	PrevInstructions []int
 	Terminate bool
 }
 
@@ -59,11 +59,29 @@ func RunProgramUntilRepeatedInstruction(program *Program){
 }
 
 func ParseAndExecuteInstruction(program *Program){
+	var StepProgram func(steps int)
+	var CheckIfTerminate func()bool
+	CheckIfTerminate = func()bool{
+		for _, val := range program.PrevInstructions{
+			if val == program.Pointer{
+				return true
+			}
+		}
+		return false
+	}
+	StepProgram = func(steps int){
+		program.PrevInstructions = append(program.PrevInstructions, program.Pointer)
+		program.Pointer = program.Pointer + steps
+		if CheckIfTerminate(){
+			return
+		}
+	}
 	var instruction = strings.Split(program.Instructions[program.Pointer], " ")
 	var op = instruction[0]
 	var argument, _ = strconv.Atoi(instruction[1])
 	switch op{
 		case "acc":
+		program.Accumilator = program.Accumilator + argument
 		StepProgram(1)
 		break
 		case "jmp":
@@ -79,5 +97,7 @@ func ParseAndExecuteInstruction(program *Program){
 func main(){
 	var data = ReadFile(input)
 	var program = LoadProgram(data)
+	RunProgramUntilRepeatedInstruction(program)
+	fmt.Printf("Part 1: %v", program.Accumilator)
 	fmt.Println(program)
 }
