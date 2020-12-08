@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-var input = "input2"
+var input = "input"
 
 type Program struct {
 	Pointer int
@@ -64,6 +64,7 @@ func ParseAndExecuteInstruction(program *Program){
 	CheckIfTerminate = func()bool{
 		for _, val := range program.PrevInstructions{
 			if val == program.Pointer{
+				program.Terminate = true
 				return true
 			}
 		}
@@ -93,11 +94,9 @@ func ParseAndExecuteInstruction(program *Program){
 	}
 }
 
-
 func main(){
 	var data = ReadFile(input)
 	var program = LoadProgram(data)
 	RunProgramUntilRepeatedInstruction(program)
 	fmt.Printf("Part 1: %v", program.Accumilator)
-	fmt.Println(program)
 }
