@@ -20,7 +20,7 @@ func check(e error)bool{
 	return true
 }
 
-func readFile(input string) (text []string){
+func ReadFile(input string) (text []string){
 	file, err := os.Open(input)
 	check(err)
 	scanner := bufio.NewScanner(file)
@@ -55,7 +55,23 @@ func CountAmountOfBagsWithShinyGold(rules Rule)int{
 			result = result + 1
 		}
 	}
-	return result
+	return result 
+}
+
+func CountAmountOfBagsWithinShinyGoldBag(rules Rule)int{
+	var recursivePacking func(packing Packing) int
+	recursivePacking = func(packing Packing) int {
+		var result = 1
+		if _, ok := packing["ootherbag"]; ok {
+			return result
+		}else{
+			for bag, _ := range packing {
+				result = result + recursivePacking(rules[bag]) * packing[bag]
+			}
+		}
+		return result
+	}
+	return recursivePacking(rules["shinygoldbag"])-1
 }
 
 func BuildRuleList(data []string) Rule {
@@ -79,10 +95,11 @@ func BuildRuleList(data []string) Rule {
 	return rule
 }
 
-
 func main(){
-	var data = readFile(input)
+	var data = ReadFile(input)
 	var ruleMap = BuildRuleList(data)
 	var amountOfGoldBags = CountAmountOfBagsWithShinyGold(ruleMap)
 	fmt.Printf("Part 1: %v\n", amountOfGoldBags)
+	var amountOfBags = CountAmountOfBagsWithinShinyGoldBag(ruleMap)
+	fmt.Printf("Part 2: %v\n", amountOfBags)
 }
