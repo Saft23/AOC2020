@@ -56,29 +56,28 @@ func ConvertToSeatMap(data []string)[][]int{
 	return seatMap
 }
 
-func StepOneSeatMap(seatMap [][]int)([][]int, int){
+func StepOneSeatMap(seatMap [][]int, part int)([][]int, int){
 	var changes = 0
-	//var AmountOfAdjacentOccupiedSeats func(y int,x int)int
+	var AmountOfAdjacentOccupiedSeats func(y int,x int)int
 	var AmountOfAdjacentOccupiedSeatsPart2 func(y int,x int)int
-	//AmountOfAdjacentOccupiedSeats = func(chairY int, chairX int)int{
-	//var result = 0
-	//
-	//for yCord := chairY-1; yCord <= chairY+1; yCord++{
-	//for xCord := chairX-1; xCord <= chairX+1; xCord++{
-	////fmt.Printf("yCord: %v, xCord: %v\n", yCord, xCord)
-	//if xCord == chairX && yCord == chairY{
-	//continue
-	//}else if yCord < 0 || yCord > len(seatMap)-1 || xCord < 0 || xCord > len(seatMap[0])-1{
-	//continue
-	//}else{
-	//if seatMap[yCord][xCord] == OCCUPIED{
-	//result = result + 1
-	//}
-	//}
-	//}
-	//}
-	//return result
-	//}
+	AmountOfAdjacentOccupiedSeats = func(chairY int, chairX int)int{
+		var result = 0
+		
+		for yCord := chairY-1; yCord <= chairY+1; yCord++{
+			for xCord := chairX-1; xCord <= chairX+1; xCord++{
+				if xCord == chairX && yCord == chairY{
+					continue
+				}else if yCord < 0 || yCord > len(seatMap)-1 || xCord < 0 || xCord > len(seatMap[0])-1{
+					continue
+				}else{
+					if seatMap[yCord][xCord] == OCCUPIED{
+						result = result + 1
+					}
+				}
+			}
+		}
+		return result
+	}
 	AmountOfAdjacentOccupiedSeatsPart2 = func(chairY int, chairX int)int{
 		var result = 0
 		var maxY = len(seatMap)
@@ -149,15 +148,31 @@ func StepOneSeatMap(seatMap [][]int)([][]int, int){
 				break
 
 			case OCCUPIED:
-				if AmountOfAdjacentOccupiedSeatsPart2(rowIndex, colIndex) >= 5{ //4
-					seatMapCopy[rowIndex][colIndex] = EMPTY
-					changes = changes + 1
+				if part == 1{
+					if AmountOfAdjacentOccupiedSeats(rowIndex, colIndex) >= 4{ //4
+						seatMapCopy[rowIndex][colIndex] = EMPTY
+						changes = changes + 1
+					}
+				}else{
+					if AmountOfAdjacentOccupiedSeatsPart2(rowIndex, colIndex) >= 5{ //4
+						seatMapCopy[rowIndex][colIndex] = EMPTY
+						changes = changes + 1
+					}
+
 				}
 				break
 			case EMPTY:
-				if AmountOfAdjacentOccupiedSeatsPart2(rowIndex, colIndex) == 0{
-					seatMapCopy[rowIndex][colIndex] = OCCUPIED
-					changes = changes + 1
+				if part == 1{
+					if AmountOfAdjacentOccupiedSeats(rowIndex, colIndex) == 0{
+						seatMapCopy[rowIndex][colIndex] = OCCUPIED
+						changes = changes + 1
+					}
+
+				}else{
+					if AmountOfAdjacentOccupiedSeatsPart2(rowIndex, colIndex) == 0{
+						seatMapCopy[rowIndex][colIndex] = OCCUPIED
+						changes = changes + 1
+					}
 				}
 				break
 			}
@@ -185,9 +200,15 @@ func main(){
 	seatMap := ConvertToSeatMap(data)
 	changes := 1
 	for changes > 0{
-		seatMap, changes = StepOneSeatMap(seatMap)
+		seatMap, changes = StepOneSeatMap(seatMap, 1)
 	}
-
 	var part1 = AmountOfOccupiedSeats(seatMap)
-	fmt.Printf("Part 1: %v", part1)
+
+	changes = 1
+	seatMap = ConvertToSeatMap(data)
+	for changes > 0{
+		seatMap, changes = StepOneSeatMap(seatMap, 2)
+	}
+	var part2 = AmountOfOccupiedSeats(seatMap)
+	fmt.Printf("Part 1: %v\nPart 2: %v\n", part1, part2)
 }
