@@ -6,7 +6,6 @@ import (
 	"os"
 	"math"
 	"strconv"
-	//"sort"
 )
 
 var input = "input"
@@ -17,46 +16,94 @@ type Ship struct{
 	Heading int
 	OrigNorth int
 	OrigEast int
+
+	Relative bool
+	NorthWaypoint int
+	EastWaypoint int
 }
 
 func (s Ship) Move(dir string, value int)Ship{
-	switch dir{
-		case "N":
-		s.North = s.North + value
-		break
+	if s.Relative{
+		switch dir{
+			case "N":
+			s.NorthWaypoint = s.NorthWaypoint + value
+			break
 
-		case "S":
-		s.North = s.North - value
-		break
+			case "S":
+			s.NorthWaypoint = s.NorthWaypoint - value
+			break
 
-		case "E":
-		s.East = s.East + value
-		break
+			case "E":
+			s.EastWaypoint = s.EastWaypoint + value
+			break
 
-		case "W":
-		s.East = s.East - value
-		break
+			case "W":
+			s.EastWaypoint = s.EastWaypoint - value
+			break
 
-		case "F":
-		var radians float64 = float64(s.Heading) * 3.14/180
-		northIncrement := math.Cos(radians) * float64(value)
-		eastIncrement := math.Sin(radians) * float64(value)
-		s.North = s.North + int(math.Round(northIncrement))
-		s.East = s.East + int(math.Round(eastIncrement))
-		break
+			case "F":
+			s.North = s.North + value * s.NorthWaypoint
+			s.East = s.East + value * s.EastWaypoint
+			break
+		}
+
+	}else{
+		switch dir{
+			case "N":
+			s.North = s.North + value
+			break
+
+			case "S":
+			s.North = s.North - value
+			break
+
+			case "E":
+			s.East = s.East + value
+			break
+
+			case "W":
+			s.East = s.East - value
+			break
+
+			case "F":
+			var radians float64 = float64(s.Heading) * 3.14/180
+			northIncrement := math.Cos(radians) * float64(value)
+			eastIncrement := math.Sin(radians) * float64(value)
+			s.North = s.North + int(math.Round(northIncrement))
+			s.East = s.East + int(math.Round(eastIncrement))
+			break
+		}
 	}
 	return s
 }
 
 func (s Ship) Turn(dir string, value int)Ship{
-	switch dir{
-		case "L":
-		s.Heading = (s.Heading - value) % 360
-		break
+	if s.Relative {
+		var radians float64 = float64(value) * 3.14/180
 
-		case "R":
-		s.Heading = (s.Heading + value) % 360
-		break
+		switch dir{
+			case "R":
+			radians = radians
+			break
+
+			case "L":
+			radians = -radians
+			break
+		}
+		newEast := float64(s.EastWaypoint) * math.Cos(radians) + float64(s.NorthWaypoint) * math.Sin(radians)
+		newNorth := -float64(s.EastWaypoint) * math.Sin(radians) + float64(s.NorthWaypoint) * math.Cos(radians)
+		s.EastWaypoint = int(math.Round(newEast))
+		s.NorthWaypoint = int(math.Round(newNorth))
+	}else{
+		switch dir{
+			case "L":
+			s.Heading = (s.Heading - value) % 360
+			break
+
+			case "R":
+			s.Heading = (s.Heading + value) % 360
+			break
+		}
 	}
 	return s
 }
@@ -72,7 +119,6 @@ func (s Ship) RunInstructions(data []string)Ship{
 			case "N", "E", "S", "W", "F":
 			s = s.Move(instruction, value)
 		}
-		fmt.Println(s)
 	}
 	return s
 }
@@ -100,13 +146,20 @@ func check(e error)bool{
 	return true
 }
 
-
-
-
 func main(){
 	var data = ReadFile(input)
-	ship := Ship{}
-	ship.Heading = 90
-	ship = ship.RunInstructions(data)
-	fmt.Println(ship.ManhattanDistainceFromOrig())
+	shipPart1 := Ship{}
+	shipPart1.Heading = 90
+	shipPart1 = shipPart1.RunInstructions(data)
+	part1 := shipPart1.ManhattanDistainceFromOrig()
+
+
+	shipPart2 := Ship{}
+	shipPart2.EastWaypoint = 10
+	shipPart2.NorthWaypoint = 1
+	shipPart2.Relative = true
+	shipPart2 = shipPart2.RunInstructions(data)
+	part2 := shipPart2.ManhattanDistainceFromOrig()
+
+	fmt.Printf("Part 1: %v\nPart 2: %v\n", part1, part2)
 }
