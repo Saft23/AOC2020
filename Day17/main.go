@@ -12,6 +12,7 @@ type Cord struct {
 	x int
 	y int
 	z int
+	w int
 }
 type Cube map[Cord]bool
 
@@ -39,10 +40,10 @@ func LoadDataIntoCube(data []string, cube *Cube){
 	for indexRow, row := range data{
 		for indexCol, col := range row{
 			if  col == '#'{
-				cord := Cord{x:indexRow, y:indexCol, z:0}
+				cord := Cord{x:indexRow, y:indexCol, z:0, w:0}
 				(*cube)[cord] = true
 			}else if col == '.'{
-				cord := Cord{x: indexRow, y:indexCol, z:0}
+				cord := Cord{x: indexRow, y:indexCol, z:0, w:0}
 				(*cube)[cord] = false
 			}
 		}
@@ -63,8 +64,10 @@ func (cube Cube) Init(size int){
 	for x:=-(size/2); x<size/2; x++{
 		for y:=-(size/2); y<size/2; y++{
 			for z:=-(size/2); z<size/2; z++{
-				cord := Cord{x:x, y:y, z:z}
-				cube[cord] = false
+				for w:=-(size/2); w<size/2; w++{
+					cord := Cord{x:x, y:y, z:z, w:w}
+					cube[cord] = false
+				}
 			}
 		}
 	}
@@ -75,12 +78,15 @@ func (cube Cube) GetAmountOfActiveNeighbors(cord Cord)int{
 	for x := cord.x-1; x <= cord.x+1; x++{
 		for y := cord.y-1; y <= cord.y+1; y++{
 			for z := cord.z-1; z <= cord.z+1; z++{
-				newCord := Cord{x:x, y:y, z:z}
-				if newCord != cord{
-					if cube[newCord]{
-						result = result + 1
-					}
+				for w := cord.w-1; w <= cord.w+1; w++{
+					newCord := Cord{x:x, y:y, z:z, w:w}
+					if newCord != cord{
+					  if cube[newCord]{
+						  result = result + 1
+					  }
+				  }
 				}
+
 			}
 		}
 	}
@@ -121,5 +127,5 @@ func main(){
 		cube.Cycle()
 	}
 	part1 := cube.GetAllActiveCubes()
-	fmt.Printf("Part 1: %v", part1)
+	fmt.Printf("Part 2: %v", part1)
 }
