@@ -9,7 +9,9 @@ import (
 	//"regexp"
 )
 
-var input = "input2"
+var input = "input"
+//var input = "input2part2"
+//var input = "input2"
 
 var rules map[string]string
 type rule struct{
@@ -18,6 +20,12 @@ type rule struct{
 	res string
 }
 
+func (r rule) split() bool{
+	return len(r.rule) > 0 && len(r.rule2) > 0
+}
+func (r rule) end() bool{
+	return len(r.res) > 0
+}
 
 func ReadFile(input string) (text []string){
 	file, err := os.Open(input)
@@ -31,7 +39,7 @@ func ReadFile(input string) (text []string){
 	return text
 }
 
-func BuildRuleList(data []string)map[int]rule{
+func BuildRuleList(data []string)(map[int]rule,[]string){
 	rules := make(map[int]rule)
 	messages :=[]string{}
 	for i:=0; i<len(data); i++{
@@ -45,7 +53,7 @@ func BuildRuleList(data []string)map[int]rule{
 				r := rule{res: val}
 				rules[key] = r
 			}else{
-				//Rules
+
 				res := strings.Split(line, ":")
 				key, _ := strconv.Atoi(res[0])
 				if(strings.Contains(res[1], "|")){
@@ -86,38 +94,14 @@ func BuildRuleList(data []string)map[int]rule{
 					r := rule{rule: tmpruleint}
 					rules[key] = r
 				}
-				fmt.Println(line)
 			}
 		}else{
 			messages = append(messages, line)
-			//Messages data
-			fmt.Println(line)
 		}
 	}
-	fmt.Println(rules)
-	return rules
+	return rules, messages
 }
 
-
-func CalculateAllPossibleCombinations(allRules map[int]rule)[]string{
-	allCombinations := []string{}
-	orig := allRules[0].rule
-
-	mul := func(r rule)bool{
-		return len(r.rule) > 0 && len(r.rule2) > 0
-	}
-	fmt.Println(mul(allRules[0]))
-	end := func(r rule)bool{
-		return len(r.res) > 0
-	}
-
-	for _, val := range orig{
-		if end(allRules[val]){
-			fmt.Println(allRules[val].res)
-		}
-	}
-	return allCombinations
-}
 func RefineRules(){
 	var changes = 0
 	mapping := make(map[string]string)
@@ -134,6 +118,97 @@ func RefineRules(){
 	}
 }
 
+func buildAllCombinations(rules map[int]rule)[]string{
+	allCombinations := [][]int{}
+	allCombinations = append(allCombinations, rules[0].rule)
+
+	stepCombinations := func(oldCombinations [][]int)([][]int, int){
+		fmt.Println(len(oldCombinations))
+		changes := 0
+		newCombinations := [][]int{}
+		for i:=0; i<len(oldCombinations); i++{
+				newComb := []int{}
+			for j:=0; j<len(oldCombinations[i]); j++{
+				ruleId := oldCombinations[i][j]
+				rule, ok := rules[ruleId]
+
+				if !ok{
+					newComb = append(newComb, ruleId)
+					continue
+				}else {
+					//Rule exists
+					if rule.end(){
+						//End rule
+						if rule.res == " a"{
+							newComb = append(newComb, 999)
+						}else {
+							newComb = append(newComb, 998)
+						}
+						changes = changes + 1
+					} else if rule.split(){
+						newCombCopy := make([]int, len(newComb))
+						copy(newCombCopy, newComb)
+						newCombCopy = append(newCombCopy, rule.rule...)
+						newComb = append(newComb, rule.rule2...)
+						newCombCopy = append(newCombCopy, oldCombinations[i][j+1:]...)
+						newComb = append(newComb, oldCombinations[i][j+1:]...)
+						newCombinations = append(newCombinations, newCombCopy)
+						changes = changes + 1
+						break
+
+					}else {
+						newComb = append(newComb, rule.rule...)
+						changes = changes + 1
+						//Single rule
+					}
+
+				}
+			}
+			newCombinations = append(newCombinations, newComb)
+		}
+
+		return newCombinations, changes
+	}
+
+	res, changes := stepCombinations(allCombinations)
+
+	for changes != 0 {
+		res, changes = stepCombinations(res)
+	}
+	filteredResult := filterToReadable(res)
+	return filteredResult
+}
+
+func filterToReadable(possibleCombos [][]int)[]string{
+	filteredList := []string{}
+	for i:=0; i<len(possibleCombos); i++{
+		strRow := ""
+		for j:=0; j<len(possibleCombos[i]); j++{
+			if possibleCombos[i][j] == 999{
+				strRow = strRow + "a"
+			}else if possibleCombos[i][j] == 998{
+				strRow = strRow + "b"
+			}else{
+				fmt.Println("We fucked")
+			}
+		}
+		filteredList = append(filteredList, strRow)
+	}
+	return filteredList
+}
+
+func calculateHowManyIsTrue(filteredList []string, messages []string)int{
+	solutions := 0
+	for _, m := range messages{
+		for _, f := range filteredList{
+			if m == f{
+				solutions = solutions + 1
+				break
+			}
+		}
+	}
+	return solutions
+}
 func check(e error)bool{
 	if e != nil {
 		panic(e)
@@ -141,12 +216,16 @@ func check(e error)bool{
 	return true
 }
 
+
+
+
+
+
 func main(){
 	data := ReadFile(input)
-	rules := BuildRuleList(data)
-	fmt.Println(rules)
-	//part1 := Part1(data)
+	rules, messages := BuildRuleList(data)
 
-	allCombinations := CalculateAllPossibleCombinations(rules)
-	fmt.Println(allCombinations)
+	filteredResult := buildAllCombinations(rules)
+	part1 := calculateHowManyIsTrue(filteredResult, messages)
+	fmt.Println("Part 1: ",part1)
 }
