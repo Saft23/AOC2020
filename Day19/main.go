@@ -10,7 +10,7 @@ import (
 )
 
 var input = "input"
-//var input = "input2part2"
+var input2 = "input2part2"
 //var input = "input2"
 
 var rules map[string]string
@@ -18,6 +18,12 @@ type rule struct{
 	rule []int
 	rule2 []int
 	res string
+	loop int
+}
+
+type combo struct{
+	list []int
+	loop int
 }
 
 func (r rule) split() bool{
@@ -150,8 +156,10 @@ func buildAllCombinations(rules map[int]rule)[]string{
 						copy(newCombCopy, newComb)
 						newCombCopy = append(newCombCopy, rule.rule...)
 						newComb = append(newComb, rule.rule2...)
+
 						newCombCopy = append(newCombCopy, oldCombinations[i][j+1:]...)
 						newComb = append(newComb, oldCombinations[i][j+1:]...)
+
 						newCombinations = append(newCombinations, newCombCopy)
 						changes = changes + 1
 						break
@@ -176,6 +184,89 @@ func buildAllCombinations(rules map[int]rule)[]string{
 		res, changes = stepCombinations(res)
 	}
 	filteredResult := filterToReadable(res)
+	fmt.Println("Number of possible combos: ",len(filteredResult))
+	return filteredResult
+}
+func buildAllCombinations2(rules map[int]rule)[]string{
+	allCombinations := []combo{}
+	allCombinations = append(allCombinations, combo{list:rules[0].rule, loop:0})
+
+	stepCombinations := func(oldCombinations []combo)([]combo, int){
+		fmt.Println(len(oldCombinations))
+		changes := 0
+		newCombinations := []combo{}
+		for i:=0; i<len(oldCombinations); i++{
+				newComb := combo{}
+			for j:=0; j<len(oldCombinations[i].list); j++{
+				if oldCombinations[i].loop > 5{
+					//fmt.Println("FUCKED")
+					oldCombinations[i] = combo{}
+					continue
+				}
+				ruleId := oldCombinations[i].list[j]
+				rule, ok := rules[ruleId]
+
+				//fmt.Println(ruleId)
+				if ruleId == 42{
+					//fmt.Println("added")
+					oldCombinations[i].loop = oldCombinations[i].loop + 1
+				}
+
+				if !ok{
+					newComb.list = append(newComb.list, ruleId)
+					newComb.loop = oldCombinations[i].loop
+					continue
+				}else {
+					//Rule exists
+					if rule.end(){
+						//End rule
+						if rule.res == " a"{
+							newComb.list = append(newComb.list, 999)
+							newComb.loop = oldCombinations[i].loop
+						}else {
+							newComb.list = append(newComb.list, 998)
+							newComb.loop = oldCombinations[i].loop
+						}
+						changes = changes + 1
+					} else if rule.split(){
+
+						tmplist := make([]int, len(newComb.list))
+						newCombCopy := combo{list:tmplist, loop:newComb.loop}
+						copy(newCombCopy.list, newComb.list)
+						newCombCopy.list = append(newCombCopy.list, rule.rule...)
+						newComb.list = append(newComb.list, rule.rule2...)
+
+						newCombCopy.list = append(newCombCopy.list, oldCombinations[i].list[j+1:]...)
+						newCombCopy.loop = oldCombinations[i].loop
+						newComb.list = append(newComb.list, oldCombinations[i].list[j+1:]...)
+						newComb.loop = oldCombinations[i].loop
+
+						newCombinations = append(newCombinations, newCombCopy)
+						changes = changes + 1
+						break
+
+					}else {
+						newComb.list = append(newComb.list, rule.rule...)
+						newComb.loop = oldCombinations[i].loop
+						changes = changes + 1
+						//Single rule
+					}
+
+				}
+			}
+			newCombinations = append(newCombinations, newComb)
+		}
+
+		return newCombinations, changes
+	}
+
+	res, changes := stepCombinations(allCombinations)
+
+	for changes != 0 {
+		res, changes = stepCombinations(res)
+	}
+	filteredResult := filterToReadable2(res)
+	fmt.Println("Number of possible combos: ",len(filteredResult))
 	return filteredResult
 }
 
@@ -187,6 +278,24 @@ func filterToReadable(possibleCombos [][]int)[]string{
 			if possibleCombos[i][j] == 999{
 				strRow = strRow + "a"
 			}else if possibleCombos[i][j] == 998{
+				strRow = strRow + "b"
+			}else{
+				fmt.Println("We fucked")
+			}
+		}
+		filteredList = append(filteredList, strRow)
+	}
+	return filteredList
+}
+
+func filterToReadable2(possibleCombos []combo)[]string{
+	filteredList := []string{}
+	for i:=0; i<len(possibleCombos); i++{
+		strRow := ""
+		for j:=0; j<len(possibleCombos[i].list); j++{
+			if possibleCombos[i].list[j] == 999{
+				strRow = strRow + "a"
+			}else if possibleCombos[i].list[j] == 998{
 				strRow = strRow + "b"
 			}else{
 				fmt.Println("We fucked")
@@ -222,10 +331,15 @@ func check(e error)bool{
 
 
 func main(){
-	data := ReadFile(input)
+	//data := ReadFile(input)
+	data := ReadFile(input2)
 	rules, messages := BuildRuleList(data)
 
-	filteredResult := buildAllCombinations(rules)
-	part1 := calculateHowManyIsTrue(filteredResult, messages)
-	fmt.Println("Part 1: ",part1)
+	//filteredResult := buildAllCombinations(rules)
+	//part1 := calculateHowManyIsTrue(filteredResult, messages)
+	//fmt.Println("Part 1: ",part1)
+
+	filteredResult := buildAllCombinations2(rules)
+	part2 := calculateHowManyIsTrue(filteredResult, messages)
+	fmt.Println("Part 2: ",part2)
 }
